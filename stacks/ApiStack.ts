@@ -1,15 +1,21 @@
-import { Api, StackContext, use } from "sst/constructs";
+import { Api, Config, StackContext, use } from "sst/constructs";
 import { StorageStack } from "./StorageStack";
 
+
 export function ApiStack({ stack }: StackContext) {
+  //API connect/access to dymonoDb  
   const { table } = use(StorageStack);
+
+  //API connect/access to secrety 
+  const STRIPE_SECRET_KEY = new Config.Secret(stack, "STRIPE_SECRET_KEY");
 
   // Create the API
   const api = new Api(stack, "Api", {
     defaults: {
+    //Identity Access and Management
       authorizer: "iam",
       function: {
-        bind: [table],
+        bind: [table, STRIPE_SECRET_KEY],
       },
     },
     routes: {
@@ -23,6 +29,9 @@ export function ApiStack({ stack }: StackContext) {
       "PUT /notes/{id}": "packages/functions/src/update.main",
       //delete notes
       "DELETE /notes/{id}": "packages/functions/src/delete.main",
+      //billing 
+      "POST /billing": "packages/functions/src/billing.main",
+
     },
   });
 
